@@ -1,0 +1,43 @@
+---
+title: "Chapter 2"
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+
+# Simple Linear Regression
+
+<hr>
+```{r setup, include=FALSE}
+library(tidyverse)
+```
+
+```{r}
+# Computer Repair Dataset
+
+df <- read_delim("data/P031.txt", "\t", 
+                 escape_double = FALSE, 
+                 col_types = cols(Minutes = col_integer(), 
+                                  Units = col_integer()), 
+                 trim_ws = TRUE)
+
+head(df)
+```
+
+Plot: 
+```{r}
+ggplot(df, aes(Units, Minutes)) + 
+  geom_point() + 
+  theme_minimal()
+```
+
+Covariance: 
+```{r}
+cov(df$Units, df$Minutes)
+```
+
+Correlation: 
+```{r}
+cor(df$Units, df$Minutes)
+```
+
