@@ -41,3 +41,87 @@ Correlation:
 cor(df$Units, df$Minutes)
 ```
 
+Formula for the coefficient $\hat\beta_1$:
+$$\hat\beta_1 = \frac{Cov(X, Y)}{Var(X)}$$
+
+```{r}
+(covariance <- cov(df$Units, df$Minutes))
+(variance_x <- var(df$Units))
+(beta_hat_1 <- covariance / variance_x)
+```
+
+```{r}
+table_2.7 <- df %>% 
+  rename(x = Units, y = Minutes) %>% 
+  mutate(y_hat = 4.162 + (15.509 * x), 
+         e = y - y_hat)
+
+table_2.7
+```
+```{r}
+table_2.7 %>% 
+  ggplot(aes(x, y)) + 
+  geom_point() + 
+  geom_line(aes(x, y_hat), size = 0.2) +
+  theme_minimal()
+```
+```{r}
+table_2.7 %>% 
+  ggplot(aes(x, e)) + 
+  geom_point() + 
+  theme_minimal()
+```
+## Tests of hypotheses
+
+```{r}
+df2 <- table_2.7[,c(1, 2)] %>% 
+  mutate(y_hat = 0 * x, 
+         e = y - y_hat)
+
+df2
+
+df2 %>% 
+  ggplot(aes(x, e)) + 
+  geom_point() + 
+  theme_minimal()
+```
+```{r}
+model <- lm(Minutes ~ Units, data = df)
+
+model
+
+summary(model)
+```
+```{r}
+15.509 / 0.505
+```
+```{r}
+table_2.7 %>% 
+  ggplot(aes(y, y_hat)) + 
+  geom_point() + 
+  theme_minimal()
+```
+```{r}
+plot(model)
+```
+
+## Exercises
+
+### 2.1
+
+```{r}
+# Var(Y) and Var(X)
+
+var(df$Minutes)
+var(df$Units)
+```
+
+Prove or verify that 
+$$\sum_{i=1}^n(y_i - \bar y) = 0$$
+```{r}
+sum(df$Minutes - mean(df$Minutes))
+
+# Comes out close to 0
+```
+
+### 2.3
