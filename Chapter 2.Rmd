@@ -10,6 +10,7 @@ editor_options:
 <hr>
 ```{r setup, include=FALSE}
 library(tidyverse)
+theme_set(theme_minimal())
 ```
 
 ```{r}
