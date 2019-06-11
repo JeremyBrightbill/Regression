@@ -1,0 +1,199 @@
+---
+title: "Chapter 3"
+output: html_notebook
+---
+
+# Multiple Linear Regression
+
+### 3.1 
+
+**Verify that the coefficient of $X_1$ can be obtained from a series of simple regression equations**
+
+```{r setup, include=FALSE}
+library(tidyverse)
+theme_set(theme_minimal())
+```
+
+```{r}
+# Supervisor data set
+
+df <- read_delim("data/P060.txt", "\t", 
+                 escape_double = FALSE, trim_ws = TRUE)
+
+df
+```
+First, model both together
+
+```{r}
+mod0 <- lm(Y ~ X1 + X2, df)
+
+summary(mod0)
+```
+
+Now separately:
+
+1. Fit the simple regression model that relates $Y$ to $X_2$. Let the residuals from this regression be denoted by eY_X2. 
+
+```{r}
+mod1 <- lm(Y ~ X2, data = df)
+
+summary(mod1)
+```
+```{r}
+df$eY_X2 <- mod1$residuals
+
+df[c("Y", "X2", "eY_X2")]
+```
+The fitted regression equation is
+
+$$Y = 42.1087 + 0.4239X_2$$
+
+2. Fit the simple regression model that relates $X_1$ (temporarily considered response variable) to $X_2$. Let the residuals from this regression be denoted by eX1_X2.
+
+```{r}
+mod2 <- lm(X1 ~ X2, df)
+
+summary(mod2)
+```
+```{r}
+df$eX1_X2 <- mod2$residuals
+
+df[c("Y", "X2", "eY_X2", "eX1_X2")]
+```
+The fitted regression equation is
+
+$$\hat{X}_1 = 34.3156 + 0.6075\hat{X}_2$$
+3. Fit the simple regression model that relates the above two residuals.
+
+```{r}
+mod3 <- lm(eY_X2 ~ 0 + eX1_X2, df)
+
+summary(mod3)
+```
+The fitted regression equation:
+
+$$\hat{e}_{Y.X_2} = 0 + 0.7803e_{X_1.X_2}$$
+### 3.3
+
+Examination data
+
+```{r}
+df_exam <- read_delim("data/P083.txt", "\t", 
+                      escape_double = FALSE, trim_ws = TRUE)
+
+df_exam
+```
+
+Model 1: $F = \beta_0 + \beta_1P_1 + \varepsilon$
+
+```{r}
+mod_exam1 <- lm(F ~ P1, df_exam)
+summary(mod_exam1)
+```
+
+Model 2: $F = \beta_0 + \beta_2P_2 + \varepsilon$
+
+```{r}
+mod_exam2 <- lm(F ~ P2, df_exam)
+summary(mod_exam2)
+```
+
+Model 3: $F = \beta_0 + \beta_1P_1 + \beta_2P_2 + \varepsilon$
+
+```{r}
+mod_exam3 <- lm(F ~ P1 + P2, df_exam)
+summary(mod_exam3)
+```
+
+Predict final exam scores for student who got 78 on P1 and 85 on P2. Use Model 3 because it is the best: lowest Adjusted R-squared (0.8744) and both coefficients significant to p = 0.05. 
+
+```{r}
+new_exam_dat = data.frame(P1 = 78, P2 = 85)
+predict(mod_exam3, new_exam_dat, interval = "prediction")
+```
+```{r}
+df_exam %>% 
+  ggplot(aes(P1, F)) + 
+  geom_point()
+```
+```{r}
+df_exam %>% 
+  ggplot(aes(P2, F)) + 
+  geom_point()
+```
+
+### 3.15
+**Cigarette data**
+
+```{r}
+df_cig <- read_delim("data/P088.txt", "\t", 
+                     escape_double = FALSE, trim_ws = TRUE)
+
+df_cig
+```
+"State" is not a variable, it's a label. 
+
+```{r}
+mod_cig1 <- lm(Sales ~ Age + HS + Income + Black + Female + Price, df_cig)
+summary(mod_cig1)
+```
+
+a) Test hypothesis that Female is not needed. 
+
+This variable shows up as not significant in the full model (p = 0.85). Model without it: 
+
+```{r}
+mod_cig2 <- lm(Sales ~ Age + HS + Income + Black + Price, df_cig)
+summary(mod_cig2)
+```
+
+Adjusted R-squared improves from 0.2282 to 0.2448, p-value of F-statistic is also (more) significant. 
+
+b) Test the hypothesis that Female and HS are not needed (HS has the next worst p-value). 
+
+```{r}
+mod_cig3 <- lm(Sales ~ Age + Income + Black + Price, df_cig)
+summary(mod_cig3)
+```
+
+R-squared stays around the same, Adjusted R-squared improves, F-statistic improves in significance. 
+
+c) Calculate 95% confint for coefficient of Income
+
+```{r}
+confint(mod_cig3)
+```
+
+d) What percent of the variation in Sales can be accounted for when Income is removed from the above equation? 
+
+```{r}
+mod_cig4 <- lm(Sales ~ Age + Black + Price, df_cig)
+summary(mod_cig4)
+```
+
+R-squared is now 0.2088, down from 0.3202, so now under 21% of variation is accounted for. 
+e) What percentage of the variation in Sales can be accounted for by the three variables Price, Age, Income?
+
+```{r}
+mod_cig5 <- lm(Sales ~ Age + Income + Price, df_cig) 
+summary(mod_cig5)
+```
+These three variables account for 30% of the variation. 
+
+f) What percentage of variation in Sales is accounted for by simple regression on Income? 
+
+```{r}
+mod_cig6 <- lm(Sales ~ Income, df_cig)
+summary(mod_cig6)
+```
+
+Only 10.6%. 
+
+Bonus, let's try just Price:
+
+```{r}
+mod_cig7 <- lm(Sales ~ Price, df_cig)
+summary(mod_cig7)
+```
+
+Not very good. 

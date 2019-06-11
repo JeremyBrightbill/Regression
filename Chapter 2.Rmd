@@ -10,6 +10,7 @@ editor_options:
 <hr>
 ```{r setup, include=FALSE}
 library(tidyverse)
+theme_set(theme_minimal())
 ```
 
 ```{r}
@@ -41,3 +42,302 @@ Correlation:
 cor(df$Units, df$Minutes)
 ```
 
+Formula for the coefficient $\hat\beta_1$:
+$$\hat\beta_1 = \frac{Cov(X, Y)}{Var(X)}$$
+
+```{r}
+(covariance <- cov(df$Units, df$Minutes))
+(variance_x <- var(df$Units))
+(beta_hat_1 <- covariance / variance_x)
+```
+
+```{r}
+table_2.7 <- df %>% 
+  rename(x = Units, y = Minutes) %>% 
+  mutate(y_hat = 4.162 + (15.509 * x), 
+         e = y - y_hat)
+
+table_2.7
+```
+```{r}
+table_2.7 %>% 
+  ggplot(aes(x, y)) + 
+  geom_point() + 
+  geom_line(aes(x, y_hat), size = 0.2) +
+  theme_minimal()
+```
+```{r}
+table_2.7 %>% 
+  ggplot(aes(x, e)) + 
+  geom_point() + 
+  theme_minimal()
+```
+## Tests of hypotheses
+
+```{r}
+df2 <- table_2.7[,c(1, 2)] %>% 
+  mutate(y_hat = 0 * x, 
+         e = y - y_hat)
+
+df2
+
+df2 %>% 
+  ggplot(aes(x, e)) + 
+  geom_point() + 
+  theme_minimal()
+```
+```{r}
+model <- lm(Minutes ~ Units, data = df)
+
+model
+
+summary(model)
+```
+```{r}
+15.509 / 0.505
+```
+```{r}
+table_2.7 %>% 
+  ggplot(aes(y, y_hat)) + 
+  geom_point() + 
+  theme_minimal()
+```
+```{r}
+plot(model)
+```
+
+## Exercises
+
+### 2.1
+
+```{r}
+# Var(Y) and Var(X)
+
+var(df$Minutes)
+var(df$Units)
+```
+
+Prove or verify that 
+$$\sum_{i=1}^n(y_i - \bar y) = 0$$
+```{r}
+sum(df$Minutes - mean(df$Minutes))
+
+# Comes out close to 0
+```
+
+### 2.3
+
+```{r}
+# a) 
+
+# Test statistic: 
+t1 <- (15.509 - 15) / 0.505
+
+# Critical value:
+t <- 2 * qt(0.05, 12)
+
+t < t1 # Significant? No
+```
+
+### 2.10 Heights of husbands and wives
+
+```{r}
+df_2.10 <- read_delim("data/P052.txt", "\t", 
+    escape_double = FALSE, trim_ws = TRUE)
+
+df_2.10 <- df_2.10 %>% rename(X = Husband, Y = Wife)
+```
+```{r}
+df_2.10 %>% 
+  ggplot(aes(X, Y)) + 
+  geom_point() + 
+  theme_minimal() 
+```
+```{r}
+# Reverse X and Y
+df_2.10 %>% 
+  ggplot(aes(Y, X)) +
+  geom_point() +
+  theme_minimal() 
+```
+
+```{r}
+# See what it looks like if both scales start at 0
+
+df_2.10 %>% 
+  ggplot(aes(X, Y)) + 
+  geom_point() + 
+  theme_minimal() + 
+  scale_x_continuous(limits = c(0, NA)) + 
+  scale_y_continuous(limits = c(0, NA))
+```
+
+```{r}
+# a) Covariance
+cov(df_2.10$X, df_2.10$Y)
+```
+```{r}
+# b) Covariance if heights are measured in inches
+
+df_2.10 <- df_2.10 %>% 
+  mutate(X_inch = X / 2.54, 
+         Y_inch = Y / 2.54)
+
+cov(df_2.10$X_inch, df_2.10$Y_inch)
+```
+```{r}
+# c) Correlation CM
+cor(df_2.10$X, df_2.10$Y)
+```
+```{r}
+# d) Correlation Inches
+cor(df_2.10$X_inch, df_2.10$Y_inch)
+```
+```{r}
+# e) Correlation if every man married a woman exactly 5cm shorter than him
+df_2.10 <- df_2.10 %>% 
+  mutate(Y_5cm = X - 5)
+
+cor(df_2.10$X, df_2.10$Y_5cm) # 1
+
+```
+```{r}
+# f) Which should be response variable? 
+
+#     Mathematically shouldn't make a difference. Comes down to social knowledge. Let's keep Y as response, wife's height 
+
+```
+```{r}
+# g) Fit model, test null hypothesis that slope is 0. 
+
+model_2.10 <- lm(Y ~ X, data = df_2.10)
+summary(model_2.10)
+
+```
+```{r}
+# Hypothesis that slope is 0
+
+# Probability of t value
+pt(-11.458, 94) * 2
+
+# Result is significant (as shown above, minuscule p-value)
+```
+
+```{r}
+# Model the other way
+
+predict_husband <- lm(X ~ Y, data = df_2.10)
+summary(predict_husband)
+```
+
+### 2.12 Newspaper circulation
+
+```{r}
+df_2.12 <- read_delim("data/P054.txt", "\t", 
+    escape_double = FALSE, trim_ws = TRUE)
+df_2.12
+```
+```{r}
+# a) Scatterplot
+
+df_2.12 %>% 
+  ggplot(aes(Daily, Sunday)) + 
+  geom_point() + 
+  geom_smooth(method = "lm") +
+  scale_x_continuous(limits = c(0, NA)) + 
+  scale_y_continuous(limits = c(0, NA)) +
+  theme_minimal()
+```
+```{r}
+# b) Fit model
+
+model_news <- lm(Sunday ~ Daily, data = df_2.12)
+summary(model_news)
+```
+```{r}
+# c) Obtain 95% confint for the coefficients
+#     User r confint, default level = 0.95
+
+confint(model_news)
+```
+```{r}
+# d) Is there justification? Yes, don't need to do full hypothesis test. R tells us p-value that slope != 0 is <2e-16. 
+
+# e) What proportion of Sunday variability is accounted for by daily circulation? 
+
+summary(model_news)$adj.r.squared # 91.5%
+```
+```{r}
+# f) Provide an estimate (95% level) of the average Sunday circulation of newspapers with daily circulation of 500,000.
+
+```
+From page 41, we want an estimation of the mean reponse $\mu_0$ when $X = x_0$. This is:
+$$ \hat\mu_0 = \hat\beta_0 + \hat\beta_1x_0$$
+Finding the mean is the easy part, with R: 
+```{r}
+(mu_hat_0 <- summary(model_news)$coefficients[1] + summary(model_news)$coefficients[2] * 500)
+```
+
+Now we need confidence levels. Could do the formula manually, but R has it. See this article: https://rpubs.com/aaronsc32/regression-confidence-prediction-intervals
+
+```{r}
+new_dat <- data.frame(Daily = 500)
+predict(model_news, newdata = new_dat, interval = "confidence")
+```
+```{r}
+# Plot this
+
+df_2.12 %>% 
+  ggplot(aes(Daily, Sunday)) + 
+  geom_point() + 
+  geom_smooth(method = "lm") + 
+  scale_x_continuous(limits = c(0, NA)) + 
+  scale_y_continuous(limits = c(0, NA)) +
+  theme_minimal() + 
+  geom_segment(aes(500, 644, xend = 500, yend = 723), color = "darkred") + 
+  geom_point(aes(500, 684), size = 2, color = "darkred") + 
+  labs(title = "Point estimate and confidence limits", 
+       subtitle = "For mean Sunday if Daily = 500 (thousand)")
+```
+```{r}
+# g) Predicted Sunday circulation for a given newspaper. Point estimate will be the same as above, but will use "prediction intervals" instead of "confidence intervals". 
+
+new_dat <- data.frame(Daily = 500)
+predict(model_news, newdata = new_dat, interval = "prediction")
+```
+```{r}
+# Plot this
+
+df_2.12 %>% 
+  ggplot(aes(Daily, Sunday)) + 
+  geom_point() + 
+  geom_smooth(method = "lm") + 
+  scale_x_continuous(limits = c(0, NA)) + 
+  scale_y_continuous(limits = c(0, NA)) +
+  theme_minimal() + 
+  geom_segment(aes(500, 457, xend = 500, yend = 910), color = "darkred") + 
+  geom_point(aes(500, 684), size = 2, color = "darkred") + 
+  labs(title = "Point estimate and prediction limits", 
+       subtitle = "For Sunday circulation of given paper with Daily = 500 (thousand)")
+```
+```{r}
+# h) Prediction for another paper with daily circulation of 2000 (i.e 2,000,000)
+
+new_dat <- data.frame(Daily = 2000)
+predict(model_news, newdata = new_dat, interval = "prediction")
+```
+```{r}
+# Plot this
+
+df_2.12 %>% 
+  ggplot(aes(Daily, Sunday)) + 
+  geom_point() + 
+  geom_smooth(method = "lm") + 
+  scale_x_continuous(limits = c(0, NA)) + 
+  scale_y_continuous(limits = c(0, NA)) +
+  theme_minimal() + 
+  geom_segment(aes(2000, 2373, xend = 2000, yend = 3013), color = "darkred") + 
+  geom_point(aes(2000, 2693), size = 2, color = "darkred") + 
+  labs(title = "Point estimate and prediction limits: out of sample", 
+       subtitle = "For Sunday circulation of given paper with Daily = 2000 (thousand)")
+```
